@@ -1,0 +1,13 @@
+com\studenthelper\crdt\model\CrdtNote$1.class
+com\studenthelper\crdt\model\CrdtNote$TagRecord.class
+com\studenthelper\crdt\operation\OperationType.class
+com\studenthelper\crdt\model\BlockType.class
+com\studenthelper\crdt\model\CrdtNote.class
+com\studenthelper\crdt\clock\LamportClock.class
+com\studenthelper\crdt\engine\CrdtEngine.class
+com\studenthelper\crdt\model\CrdtProgress.class
+com\studenthelper\crdt\model\FractionalIndex.class
+com\studenthelper\crdt\operation\CrdtOperation.class
+com\studenthelper\crdt\clock\VersionVector.class
+com\studenthelper\crdt\model\CrdtBlock.class
+com\studenthelper\crdt\engine\CrdtEngine$1.class

@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline-First Learning Platform - CRDT Sync Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --secondary: #0ea5e9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: var(--gray-50);
+            color: var(--gray-900);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            color: white;
+            padding: 24px 32px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+        }
+
+        .logo-title h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-title p {
+            font-size: 13px;
+            color: #c7d2fe;
+            margin-top: 2px;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 10px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .badge.online {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+        }
+
+        .badge.db {
+            background: rgba(14, 165, 233, 0.2);
+            border-color: rgba(14, 165, 233, 0.4);
+            color: #7dd3fc;
+        }
+
+        .nav-tabs {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 32px;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            padding: 16px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-600);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            color: var(--primary);
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 28px auto;
+            padding: 0 24px;
+            flex: 1;
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Simulator Styles */
+        .simulator-header {
+            background: white;
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .simulator-info h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .simulator-info p {
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .btn-action {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-action:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .device-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+
+        .device-card.offline {
+            border-color: #fca5a5;
+        }
+
+        .device-card.online {
+            border-color: #86efac;
+        }
+
+        .device-topbar {
+            padding: 16px 20px;
+            background: var(--gray-100);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .device-identity {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .device-icon {
+            font-size: 22px;
+        }
+
+        .device-name {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .device-status-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .network-toggle-btn {
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .network-toggle-btn.btn-online {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .network-toggle-btn.btn-offline {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .device-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .form-control {
+            padding: 10px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 90px;
+            font-family: inherit;
+        }
+
+        .outbox-status {
+            background: var(--gray-50);
+            border: 1px dashed var(--gray-300);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .outbox-count {
+            font-weight: 700;
+            color: var(--warning);
+        }
+
+        .device-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .btn-sub {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--gray-300);
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .btn-sub:hover {
+            background: var(--gray-100);
+        }
+
+        .btn-sync {
+            background: var(--secondary);
+            color: white;
+            border: none;
+        }
+
+        .btn-sync:hover {
+            background: #0284c7;
+        }
+
+        /* Result Converged Box */
+        .converged-result-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            padding: 24px;
+        }
+
+        .result-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 12px;
+        }
+
+        .result-title h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .markdown-preview {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Courses Grid */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        .course-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+
+        .course-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .course-banner {
+            height: 120px;
+            background: linear-gradient(135deg, #4338ca, #3b82f6);
+            padding: 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .course-badge {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.25);
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .course-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .course-title {
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .course-desc {
+            font-size: 13px;
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+
+        .course-lessons-list {
+            margin-top: 10px;
+            border-top: 1px solid var(--gray-200);
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .lesson-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--gray-50);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .btn-download-offline {
+            background: #e0e7ff;
+            color: #3730a3;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-download-offline:hover {
+            background: #c7d2fe;
+        }
+
+        /* OpLog Table */
+        .oplog-container {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: var(--gray-100);
+            padding: 12px 16px;
+            font-weight: 600;
+            color: var(--gray-700);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--gray-200);
+            color: var(--gray-800);
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+        }
+
+        tr:hover {
+            background: var(--gray-50);
+        }
+
+        .op-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .op-INSERT_BLOCK { background: #dcfce7; color: #166534; }
+        .op-UPDATE_TITLE { background: #e0e7ff; color: #3730a3; }
+        .op-ADD_TAG { background: #fef3c7; color: #92400e; }
+        .op-DELETE_BLOCK { background: #fee2e2; color: #991b1b; }
+        .op-UPDATE_PROGRESS { background: #e0f2fe; color: #075985; }
+
+        footer {
+            background: white;
+            border-top: 1px solid var(--gray-200);
+            padding: 18px 32px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="logo-group">
+                <div class="logo-icon">&#128218;</div>
+                <div class="logo-title">
+                    <h1>Offline-First Learning Platform</h1>
+                    <p>Conflict-Free CRDT Synchronization Engine with SQLite & Android Support</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge online">&#9679; Server Online (Port 8080)</span>
+                <span class="badge db">&#128190; SQLite Database Active</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="nav-tabs">
+        <div class="nav-container">
+            <button class="nav-btn active" onclick="switchTab('simulator')">&#128241; Multi-Device Offline Simulator</button>
+            <button class="nav-btn" onclick="switchTab('courses')">&#128214; Course Catalog & Offline Lessons</button>
+            <button class="nav-btn" onclick="switchTab('oplog')">&#9881; CRDT Operation Log & Vector Clocks</button>
+        </div>
+    </div>
+
+    <main>
+        <!-- TAB 1: MULTI-DEVICE SIMULATOR -->
+        <section id="tab-simulator" class="tab-content active">
+            <div class="simulator-header">
+                <div class="simulator-info">
+                    <h2>Conflict-Free Offline Synchronization Laboratory</h2>
+                    <p>Simulate two independent devices modifying the same study note while completely offline. Watch CRDT merge both edits without conflicts!</p>
+                </div>
+                <button class="btn-action" onclick="runAutomatedSimulation()">
+                    <span>&#9889; Run Automated Conflict & Merge Simulation</span>
+                </button>
+            </div>
+
+            <div class="devices-grid">
+                <!-- Device 1: Phone -->
+                <div class="device-card online" id="card-phone">
+                    <div class="device-topbar">
+                        <div class="device-identity">
+                            <span class="device-icon">&#128241;</span>
+                            <div>
+                                <div class="device-name">Student Phone (Pixel 7)</div>
+                                <small style="color: var(--gray-600);">ID: device-phone</small>
+                            </div>
+                        </div>
+                        <div class="device-status-toggle">
+                            <button class="network-toggle-btn btn-online" id="net-btn-phone" onclick="toggleDeviceNetwork('phone')">
+                                <span id="net-icon-phone">&#128246;</span> <span id="net-text-phone">Online</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="device-body">
+                        <div class="form-group">
+                            <label>Note Title</label>
+                            <input type="text" id="phone-title" class="form-control" value="Graph Traversal Algorithms" />
+                        </div>
+                        <div class="form-group">
+                            <label>Add Study Note Paragraph</label>
+                            <textarea id="phone-content" class="form-control" placeholder="Write offline notes...">Phone offline note: Breadth-First Search (BFS) is optimal for finding the shortest path in unweighted graphs.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Add Topic Tag</label>
+                            <input type="text" id="phone-tag" class="form-control" value="BFS" />
+                        </div>
+                        <div class="outbox-status">
+                            <span>Pending Offline Ops in SQLite:</span>
+                            <span class="outbox-count" id="phone-outbox-count">0 ops queued</span>
+                        </div>
+                        <div class="device-actions">
+                            <button class="btn-sub" onclick="recordDeviceEdit('phone')">&#128221; Save Local Edit</button>
+                            <button class="btn-sub btn-sync" onclick="syncDevice('phone')">&#128257; Synchronize Now</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device 2: Tablet -->
+                <div class="device-card online" id="card-tablet">
+                    <div class="device-topbar">
+                        <div class="device-identity">
+                            <span class="device-icon">&#128187;</span>
+                            <div>
+                                <div class="device-name">Student Tablet (Galaxy Tab)</div>
+                                <small style="color: var(--gray-600);">ID: device-tablet</small>
+                            </div>
+                        </div>
+                        <div class="device-status-toggle">
+                            <button class="network-toggle-btn btn-online" id="net-btn-tablet" onclick="toggleDeviceNetwork('tablet')">
+                                <span id="net-icon-tablet">&#128246;</span> <span id="net-text-tablet">Online</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="device-body">
+                        <div class="form-group">
+                            <label>Note Title</label>
+                            <input type="text" id="tablet-title" class="form-control" value="Comprehensive Graph Search Study" />
+                        </div>
+                        <div class="form-group">
+                            <label>Add Study Note Paragraph</label>
+                            <textarea id="tablet-content" class="form-control" placeholder="Write offline notes...">Tablet offline note: Depth-First Search (DFS) uses recursion or a stack and is ideal for topological sorting.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Add Topic Tag</label>
+                            <input type="text" id="tablet-tag" class="form-control" value="DFS" />
+                        </div>
+                        <div class="outbox-status">
+                            <span>Pending Offline Ops in SQLite:</span>
+                            <span class="outbox-count" id="tablet-outbox-count">0 ops queued</span>
+                        </div>
+                        <div class="device-actions">
+                            <button class="btn-sub" onclick="recordDeviceEdit('tablet')">&#128221; Save Local Edit</button>
+                            <button class="btn-sub btn-sync" onclick="syncDevice('tablet')">&#128257; Synchronize Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Converged Canonical State -->
+            <div class="converged-result-card">
+                <div class="result-title">
+                    <div>
+                        <h3>Authoritative Converged Note State (SQLite Server)</h3>
+                        <p style="font-size: 13px; color: var(--gray-600);">Result after CRDT mathematical merge: zero manual conflicts, zero lost updates.</p>
+                    </div>
+                    <button class="btn-sub" onclick="loadServerNote('note-welcome-guide')">&#8635; Refresh State</button>
+                </div>
+                <div id="converged-markdown" class="markdown-preview">Loading converged note state...</div>
+            </div>
+        </section>
+
+        <!-- TAB 2: COURSES & LESSONS -->
+        <section id="tab-courses" class="tab-content">
+            <h2 style="margin-bottom: 20px; font-size: 20px;">Available Courses & Offline Downloads</h2>
+            <div class="courses-grid" id="courses-container">
+                <!-- Dynamically loaded -->
+            </div>
+        </section>
+
+        <!-- TAB 3: OPLOG & VECTOR CLOCKS -->
+        <section id="tab-oplog" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <h2 style="font-size: 20px;">CRDT Operation History & Version Vectors</h2>
+                    <p style="font-size: 13px; color: var(--gray-600);">Immutable append-only operation log stored in server SQLite database.</p>
+                </div>
+                <button class="btn-sub" onclick="loadOpLog()">&#8635; Reload Log</button>
+            </div>
+            <div class="oplog-container">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Op ID</th>
+                                <th>Type</th>
+                                <th>Client ID</th>
+                                <th>Clock</th>
+                                <th>Target</th>
+                                <th>Payload Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="oplog-tbody">
+                            <!-- Dynamically loaded -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Offline-First Learning Platform &bull; Built with Spring Boot 3, Java 21/25, SQLite & Android Jetpack CRDT Client</p>
+    </footer>
+
+    <script>
+        // State for Simulation
+        const state = {
+            activeNoteId: "note-welcome-guide",
+            phone: {
+                online: true,
+                clock: 10,
+                outbox: []
+            },
+            tablet: {
+                online: true,
+                clock: 10,
+                outbox: []
+            }
+        };
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            if (tabName === 'courses') loadCourses();
+            if (tabName === 'oplog') loadOpLog();
+            if (tabName === 'simulator') loadServerNote(state.activeNoteId);
+        }
+
+        function toggleDeviceNetwork(device) {
+            state[device].online = !state[device].online;
+            const isOnline = state[device].online;
+
+            const card = document.getElementById(`card-${device}`);
+            const btn = document.getElementById(`net-btn-${device}`);
+            const icon = document.getElementById(`net-icon-${device}`);
+            const text = document.getElementById(`net-text-${device}`);
+
+            if (isOnline) {
+                card.className = "device-card online";
+                btn.className = "network-toggle-btn btn-online";
+                icon.textContent = "📶";
+                text.textContent = "Online";
+                // Trigger auto-sync when network returns
+                if (state[device].outbox.length > 0) {
+                    syncDevice(device);
+                }
+            } else {
+                card.className = "device-card offline";
+                btn.className = "network-toggle-btn btn-offline";
+                icon.textContent = "❌";
+                text.textContent = "Offline";
+            }
+        }
+
+        function recordDeviceEdit(device) {
+            state[device].clock++;
+            const title = document.getElementById(`${device}-title`).value;
+            const content = document.getElementById(`${device}-content`).value;
+            const tag = document.getElementById(`${device}-tag`).value;
+
+            // Generate atomic operations
+            const ops = [];
+            if (title) {
+                ops.push({
+                    opId: `${device}-op-${Date.now()}-1`,
+                    noteId: state.activeNoteId,
+                    type: "UPDATE_TITLE",
+                    clientId: `device-${device}`,
+                    lamportClock: state[device].clock,
+                    timestamp: Date.now(),
+                    targetId: null,
+                    payload: title,
+                    secondaryPayload: null
+                });
+            }
+
+            if (content) {
+                state[device].clock++;
+                ops.push({
+                    opId: `${device}-op-${Date.now()}-2`,
+                    noteId: state.activeNoteId,
+                    type: "INSERT_BLOCK",
+                    clientId: `device-${device}`,
+                    lamportClock: state[device].clock,
+                    timestamp: Date.now(),
+                    targetId: `b-${device}-${Date.now().toString(36)}`,
+                    payload: "a" + state[device].clock,
+                    secondaryPayload: content + ":::PARAGRAPH"
+                });
+            }
+
+            if (tag) {
+                state[device].clock++;
+                ops.push({
+                    opId: `${device}-op-${Date.now()}-3`,
+                    noteId: state.activeNoteId,
+                    type: "ADD_TAG",
+                    clientId: `device-${device}`,
+                    lamportClock: state[device].clock,
+                    timestamp: Date.now(),
+                    targetId: tag,
+                    payload: null,
+                    secondaryPayload: null
+                });
+            }
+
+            if (state[device].online) {
+                // Device is online: push directly to server
+                sendDeltaSync(device, ops);
+            } else {
+                // Device is offline: queue in local SQLite outbox
+                state[device].outbox.push(...ops);
+                document.getElementById(`${device}-outbox-count`).textContent = `${state[device].outbox.length} ops queued locally (offline)`;
+                alert(`Device is OFFLINE! Saved ${ops.length} operation(s) locally in SQLite. Will sync automatically when internet is restored.`);
+            }
+        }
+
+        async function syncDevice(device) {
+            if (!state[device].online) {
+                alert("Cannot sync: Device is currently marked OFFLINE. Toggle network to Online first!");
+                return;
+            }
+
+            const pending = [...state[device].outbox];
+            await sendDeltaSync(device, pending);
+            state[device].outbox = [];
+            document.getElementById(`${device}-outbox-count`).textContent = "0 ops queued (Fully Synced)";
+        }
+
+        async function sendDeltaSync(device, operations) {
+            try {
+                const response = await fetch('/api/sync/delta', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        clientId: `device-${device}`,
+                        deviceName: `Student ${device.toUpperCase()}`,
+                        clientVector: { clocks: { [`device-${device}`]: state[device].clock } },
+                        operations: operations
+                    })
+                });
+                const result = await response.json();
+                loadServerNote(state.activeNoteId);
+            } catch (err) {
+                console.error("Sync error:", err);
+            }
+        }
+
+        async function loadServerNote(noteId) {
+            try {
+                const res = await fetch(`/api/notes/${noteId}/markdown`);
+                const md = await res.text();
+                document.getElementById('converged-markdown').textContent = md;
+            } catch (e) {
+                document.getElementById('converged-markdown').textContent = "Error loading note.";
+            }
+        }
+
+        async function runAutomatedSimulation() {
+            try {
+                const btn = document.querySelector('.btn-action');
+                btn.disabled = true;
+                btn.innerHTML = "<span>⏳ Simulating Offline Edits & Merge...</span>";
+
+                const res = await fetch('/api/simulator/simulate-conflict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phoneText: "📱 Student Phone: Added deep analysis on Dijkstra's algorithm running time O(E log V).",
+                        phoneTag: "GraphAlgorithms",
+                        tabletText: "💻 Student Tablet: Added topological sorting with Kahn's in-degree queue algorithm.",
+                        tabletTitle: "Comprehensive Graph Theory & Algorithms Notes"
+                    })
+                });
+
+                const data = await res.json();
+                state.activeNoteId = data.noteId;
+                document.getElementById('converged-markdown').textContent = data.convergedMarkdown;
+
+                alert(`🎉 CRDT Convergence Successful!\n\nBoth devices edited the same note offline simultaneously.\nTotal blocks: ${data.totalBlocksCount}\nTags: ${data.convergedTags.join(', ')}\nNo updates were lost!`);
+                btn.disabled = false;
+                btn.innerHTML = "<span>⚡ Run Automated Conflict & Merge Simulation</span>";
+            } catch (e) {
+                console.error(e);
+                alert("Simulation error: " + e.message);
+            }
+        }
+
+        async function loadCourses() {
+            try {
+                const res = await fetch('/api/courses');
+                const courses = await res.json();
+                const container = document.getElementById('courses-container');
+                container.innerHTML = '';
+
+                for (const c of courses) {
+                    const detailRes = await fetch(`/api/courses/${c.id}`);
+                    const detail = await detailRes.json();
+
+                    const card = document.createElement('div');
+                    card.className = 'course-card';
+                    card.innerHTML = `
+                        <div class="course-banner">
+                            <span class="course-badge">${c.level} &bull; ${c.subject}</span>
+                            <h3>${c.title}</h3>
+                        </div>
+                        <div class="course-body">
+                            <p class="course-desc">${c.description}</p>
+                            <div class="course-lessons-list">
+                                <strong>Lessons (${detail.lessons.length})</strong>
+                                ${detail.lessons.map(l => `
+                                    <div class="lesson-row">
+                                        <span>${l.orderIndex}. ${l.title}</span>
+                                        <button class="btn-download-offline" onclick="downloadLessonOffline('${l.id}')">📥 Offline Pack</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function downloadLessonOffline(lessonId) {
+            try {
+                const res = await fetch(`/api/lessons/${lessonId}/download`);
+                const pkg = await res.json();
+                alert(`✅ Offline package downloaded for "${pkg.lesson.title}"!\nContent: ${pkg.lesson.contentMarkdown.length} bytes\nQuiz questions: Ready for 100% offline self-study on Android.`);
+            } catch (e) {
+                alert("Download failed: " + e.message);
+            }
+        }
+
+        async function loadOpLog() {
+            try {
+                const res = await fetch('/api/sync/operations');
+                const ops = await res.json();
+                const tbody = document.getElementById('oplog-tbody');
+                tbody.innerHTML = '';
+
+                ops.forEach(op => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${op.opId.substring(0, 10)}...</td>
+                        <td><span class="op-badge op-${op.type}">${op.type}</span></td>
+                        <td>${op.clientId}</td>
+                        <td><strong>${op.lamportClock}</strong></td>
+                        <td>${op.targetId || '-'}</td>
+                        <td title="${op.payload || ''}">${(op.payload || '').substring(0, 45)}${(op.payload || '').length > 45 ? '...' : ''}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadServerNote(state.activeNoteId);
+        });
+    </script>
+</body>
+</html>

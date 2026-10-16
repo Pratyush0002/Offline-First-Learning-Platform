@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">StudentHelper</string>
+    <string name="tab_courses">Courses</string>
+    <string name="tab_notes">Notes</string>
+    <string name="tab_sync">Sync Status</string>
+    <string name="status_online">Connected &bull; Online</string>
+    <string name="status_offline">Offline Mode &bull; Local Storage Active</string>
+    <string name="download_offline">Download for Offline</string>
+    <string name="downloaded_badge">Saved Offline</string>
+    <string name="sync_now">Synchronize Now</string>
+    <string name="new_note">Create New Note</string>
+    <string name="save_note">Save Note</string>
+    <string name="quiz_title">Offline Knowledge Check</string>
+    <string name="mark_complete">Mark Lesson Completed</string>
+</resources>

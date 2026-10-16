@@ -1,0 +1,10 @@
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\clock\LamportClock.java
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\clock\VersionVector.java
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\engine\CrdtEngine.java
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\model\BlockType.java
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\model\CrdtBlock.java
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\model\CrdtNote.java
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\model\CrdtProgress.java
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\model\FractionalIndex.java
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\operation\CrdtOperation.java
+D:\Studenthelper\crdt-core\src\main\java\com\studenthelper\crdt\operation\OperationType.java
